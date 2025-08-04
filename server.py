@@ -27,6 +27,15 @@ def bacheche():
     print("Bacheche:", b)
     return b
 
+@app.route("/bacheca/<string:id>")
+def bacheca(id):
+    path = f"/bacheche/{id}"
+    ref = db.reference(path)
+    result = ref.get()
+    if not result:
+        result = {}
+    return result
+
 
 @app.route("/devices")
 def devices():
@@ -36,14 +45,43 @@ def devices():
     return d
 
 
+@app.route("/device/<string:nome>")
+def device(nome):
+    path = f"/devices/{nome}"
+    ref = db.reference(path)
+    result = ref.get()
+    if not result:
+        result = {}
+    return result
+
+
 @app.route("/new_device", methods=['POST'])
 def new_device():
     if 'nome' not in request.json.keys():
+        return make_response({}, 400)
+    if 'dati' not in request.json.keys():
         return make_response({}, 400)
 
     nome = request.json['nome']
     dati = request.json['dati']
     path = f"/devices/{nome}"
+    ref = db.reference(path)
+    ref.update(dati)
+
+    print("Data successfully written to Firebase!")
+    return make_response({}, 200)
+
+
+@app.route("/new_bacheca", methods=['POST'])
+def new_bacheca():
+    if 'nome' not in request.json.keys():
+        return make_response({}, 400)
+    if 'dati' not in request.json.keys():
+        return make_response({}, 400)
+
+    nome = request.json['nome']
+    dati = request.json['dati']
+    path = f"/bacheche/{nome}"
     ref = db.reference(path)
     ref.update(dati)
 
