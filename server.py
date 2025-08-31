@@ -27,6 +27,15 @@ def bacheche():
     print("Bacheche:", b)
     return b
 
+
+@app.route("/all")
+def tutto():
+    ref = db.reference('/')
+    b = ref.get()
+    print("TUTTO:", b)
+    return b
+
+
 @app.route("/bacheca/<string:id>")
 def bacheca(id):
     path = f"/bacheche/{id}"
