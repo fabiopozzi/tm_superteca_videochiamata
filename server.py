@@ -64,6 +64,51 @@ def device(nome):
     return result
 
 
+@app.route("/notify", methods=['POST'])
+def notify():
+    if 'matricola' not in request.json.keys():
+        return make_response({}, 400)
+    if 'link' not in request.json.keys():
+        return make_response({}, 400)
+
+    matricola = request.json['matricola']
+
+    r = bacheca(matricola)
+    if 'devices' not in r:
+        return make_response({'errore': 'matricola errata o inesistente'}, 400)
+
+    lista_devices = r['devices']
+    # print(lista_devices[0])
+    device_name = lista_devices[0]
+    device_data = device(device_name)
+    if not device_data or 'token' not in device_data:
+        print(device_data)
+        return make_response({'errore': 'id device errato o non esistente'}, 400)
+
+    registration_token = device_data['token']
+    #registration_token = 'cPNQn_IVQCaDoxkcSvBd2q:APA91bEWc1MXA5zM_e69Z1EoeYW_aqWtNQP28_v0JrNQr7xikDjyd1f9qDJKtvkGQDQ3_eHZz9WeEw9LNu0U36GoU4hDuw5Tn0IlLBRPARBf9MLyQIOLeDk'
+
+    message = messaging.Message(
+        data={
+            'link': request.json['link']
+        },
+        token=registration_token,
+    )
+
+    try:
+        response = messaging.send(message)
+        # Response is a message ID string.
+        print('Successfully sent message:', response)
+    except FirebaseError as e:
+        print("ERRORE INVIO")
+        print(e.code)
+        print(e)
+        return {'result': 'FAILURE'}
+
+    return {'result': 'SUCCESS'}
+
+
+
 @app.route("/new_device", methods=['POST'])
 def new_device():
     if 'nome' not in request.json.keys():
