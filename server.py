@@ -1,16 +1,16 @@
 import json
 from flask import Flask, request, make_response
-import firebase_admin
-from firebase_admin import credentials, db
+from firebase_admin import credentials, db, initialize_app, messaging
+from firebase_admin.exceptions import FirebaseError
 
 # Initialize Firebase Realtime Database
 def initialize_firebase():
     try:
         # Replace with the path to your Service Account Key JSON file
-        cred = credentials.Certificate("admin_sdk.json")
+        cred = credentials.Certificate("st4-videocall.json")
         # Replace with your Firebase Realtime Database URL
-        firebase_admin.initialize_app(cred, {
-            'databaseURL':  'https://prova-realtime-db-default-rtdb.europe-west1.firebasedatabase.app'
+        initialize_app(cred, {
+            'databaseURL':  'https://st4-videocall-default-rtdb.europe-west1.firebasedatabase.app'
         })
         print("Successfully connected to Firebase Realtime Database!")
     except Exception as e:
