@@ -66,34 +66,41 @@ def device(nome):
 
 @app.route("/notify", methods=['POST'])
 def notify():
+    print(request.json)
     if 'matricola' not in request.json.keys():
         return make_response({}, 400)
-    if 'link' not in request.json.keys():
+    if 'jwt' not in request.json.keys():
         return make_response({}, 400)
 
     matricola = request.json['matricola']
+    print(matricola)
 
     r = bacheca(matricola)
     if 'devices' not in r:
+        print("matricola errata o inesistente")
         return make_response({'errore': 'matricola errata o inesistente'}, 400)
 
     lista_devices = r['devices']
-    # print(lista_devices[0])
-    device_name = lista_devices[0]
+    #print(lista_devices.keys())
+    device_name = list(lista_devices)[0]
+    print(device_name)
+
     device_data = device(device_name)
-    if not device_data or 'token' not in device_data:
+    if not device_data or 'fcmToken' not in device_data:
         print(device_data)
+        print("ID ERRATO")
         return make_response({'errore': 'id device errato o non esistente'}, 400)
 
-    registration_token = device_data['token']
-    #registration_token = 'cPNQn_IVQCaDoxkcSvBd2q:APA91bEWc1MXA5zM_e69Z1EoeYW_aqWtNQP28_v0JrNQr7xikDjyd1f9qDJKtvkGQDQ3_eHZz9WeEw9LNu0U36GoU4hDuw5Tn0IlLBRPARBf9MLyQIOLeDk'
+    registration_token = device_data['fcmToken']
 
     message = messaging.Message(
         data={
-            'link': request.json['link']
+            'url': request.json['http'],
+            'jwt': request.json['jwt'],
         },
         token=registration_token,
     )
+    print(message)
 
     try:
         response = messaging.send(message)
