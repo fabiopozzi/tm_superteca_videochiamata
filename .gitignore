@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+
+# Firebase service-account keys (secrets — never commit)
+*.json
+
+# Local notes
+appunti.org
