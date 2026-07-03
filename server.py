@@ -151,7 +151,7 @@ def notify():
         print("ERRORE INVIO")
         print(e.code)
         print(e)
-        return {'result': 'FAILURE'}
+        return make_response({'result': 'FAILURE'}, 502)
 
     return {'result': 'SUCCESS'}
 
