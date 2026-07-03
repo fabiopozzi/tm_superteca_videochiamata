@@ -94,11 +94,43 @@ def notify():
     registration_token = device_data['fcmToken']
 
     message = messaging.Message(
+        token=registration_token,
+        notification=messaging.Notification(
+            title='Chiamata in arrivo',
+            body='Tocca per rispondere alla videochiamata',
+        ),
         data={
             'url': request.json['http'],
+            'room': 'NomeStanzaTest',
             'jwt': request.json['jwt'],
+            'caller_name': 'Dr. Mario Rossi',
+            'click_action': 'FLUTTER_NOTIFICATION_CLICK',
         },
-        token=registration_token,
+        android=messaging.AndroidConfig(
+            priority='high',
+            notification=messaging.AndroidNotification(
+                channel_id='call_channel_v3',
+                click_action='FLUTTER_NOTIFICATION_CLICK',
+            ),
+        ),
+        apns=messaging.APNSConfig(
+            headers={
+                'apns-priority': '10',
+                'apns-topic': 'com.latecnomedica.st4videocall',
+            },
+            payload=messaging.APNSPayload(
+                aps=messaging.Aps(
+                    alert=messaging.ApsAlert(
+                        title='Chiamata in arrivo',
+                        body='Tocca per rispondere alla video chiamata',
+                    ),
+                    sound='default',
+                    content_available=True,
+                    mutable_content=True,
+                    category='INCOMING_CALL_CATEGORY',
+                ),
+            ),
+        ),
     )
     print(message)
 
@@ -106,6 +138,10 @@ def notify():
         response = messaging.send(message)
         # Response is a message ID string.
         print('Successfully sent message:', response)
+    except ValueError as e:
+        print("MESSAGGIO NON VALIDO")
+        print(e)
+        return make_response({'result': 'FAILURE', 'errore': 'messaggio non valido'}, 400)
     except FirebaseError as e:
         print("ERRORE INVIO")
         print(e.code)
