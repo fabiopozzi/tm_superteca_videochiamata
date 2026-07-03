@@ -61,13 +61,20 @@ incoming-call push to that device's `fcmToken`.
 - `*.json` service-account keys are **secrets** and are gitignored — never commit them.
 - The Realtime DB URL is currently hard-coded in `initialize_firebase()`.
 
+### Deployment / trust model
+- By design this service runs **locally on the endpoint that sends the request**, split
+  out from the main app to decouple development of the two functionalities. The caller is
+  co-located and trusted, so the endpoints have **no authentication** — this is
+  intentional, not a gap.
+- **Caveat:** this relies on binding to loopback only. Do **not** expose it on a public
+  interface (`--host 0.0.0.0`) or a shared network without adding an auth layer first —
+  `/all` returns every `fcmToken` and `/notify` can push a spoofed incoming call.
+
 ### Known limitations / TODO
 - **`room` and `caller_name` are hard-coded** (`NomeStanzaTest` / `Dr. Mario Rossi`);
   they should come from the request payload.
 - **Only the first device** of a board is notified; boards with multiple devices ring
   just one.
-- **No authentication** on any endpoint: `/all` exposes every `fcmToken`, and `/notify`
-  lets any caller push a spoofed incoming call. Add an auth check before exposing this.
 - Firebase keys cannot contain `. # $ [ ] /`; `nome`/`id` from requests are interpolated
   into DB paths without sanitization.
 
