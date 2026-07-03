@@ -25,7 +25,7 @@ def bacheche():
     ref = db.reference('/bacheche')
     b = ref.get()
     print("Bacheche:", b)
-    return b
+    return b if b else {}
 
 
 @app.route("/all")
@@ -33,7 +33,7 @@ def tutto():
     ref = db.reference('/')
     b = ref.get()
     print("TUTTO:", b)
-    return b
+    return b if b else {}
 
 
 @app.route("/bacheca/<string:id>")
@@ -51,7 +51,7 @@ def devices():
     ref = db.reference('/devices')
     d = ref.get()
     print("Periferiche:", d)
-    return d
+    return d if d else {}
 
 
 @app.route("/device/<string:nome>")
