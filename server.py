@@ -71,6 +71,8 @@ def notify():
         return make_response({}, 400)
     if 'jwt' not in request.json.keys():
         return make_response({}, 400)
+    if 'http' not in request.json.keys():
+        return make_response({}, 400)
 
     matricola = request.json['matricola']
     print(matricola)
