@@ -84,6 +84,9 @@ def notify():
 
     lista_devices = r['devices']
     #print(lista_devices.keys())
+    if not lista_devices:
+        print("nessun device associato alla matricola")
+        return make_response({'errore': 'nessun device associato alla matricola'}, 400)
     device_name = list(lista_devices)[0]
     print(device_name)
 
