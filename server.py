@@ -1,7 +1,28 @@
 import json
+import logging
+import os
 from flask import Flask, request, make_response
 from firebase_admin import credentials, db, initialize_app, messaging
 from firebase_admin.exceptions import FirebaseError
+
+logging.basicConfig(
+    level=os.environ.get("LOG_LEVEL", "INFO"),
+    format="%(asctime)s %(levelname)s %(message)s",
+)
+log = logging.getLogger("st4")
+
+_SENSITIVE_KEYS = {"jwt", "fcmToken", "token"}
+
+
+def _redact(value):
+    """Return a log-safe copy: sensitive values masked, structures recursed."""
+    if isinstance(value, dict):
+        return {k: ("***" + str(v)[-4:] if k in _SENSITIVE_KEYS else _redact(v))
+                for k, v in value.items()}
+    if isinstance(value, list):
+        return [_redact(v) for v in value]
+    return value
+
 
 # Initialize Firebase Realtime Database
 def initialize_firebase():
@@ -12,9 +33,9 @@ def initialize_firebase():
         initialize_app(cred, {
             'databaseURL':  'https://st4-videocall-default-rtdb.europe-west1.firebasedatabase.app'
         })
-        print("Successfully connected to Firebase Realtime Database!")
+        log.info("Successfully connected to Firebase Realtime Database!")
     except Exception as e:
-        print(f"Error initializing Firebase: {e}")
+        log.error("Error initializing Firebase: %s", e)
         exit()
 
 app = Flask(__name__)
@@ -24,7 +45,7 @@ initialize_firebase()
 def bacheche():
     ref = db.reference('/bacheche')
     b = ref.get()
-    print("Bacheche:", b)
+    log.debug("Bacheche: %s", _redact(b))
     return b if b else {}
 
 
@@ -32,7 +53,7 @@ def bacheche():
 def tutto():
     ref = db.reference('/')
     b = ref.get()
-    print("TUTTO:", b)
+    log.debug("TUTTO: %s", _redact(b))
     return b if b else {}
 
 
@@ -50,7 +71,7 @@ def bacheca(id):
 def devices():
     ref = db.reference('/devices')
     d = ref.get()
-    print("Periferiche:", d)
+    log.debug("Periferiche: %s", _redact(d))
     return d if d else {}
 
 
@@ -66,7 +87,7 @@ def device(nome):
 
 @app.route("/notify", methods=['POST'])
 def notify():
-    print(request.json)
+    log.debug("notify payload: %s", _redact(request.json))
     if 'matricola' not in request.json.keys():
         return make_response({}, 400)
     if 'jwt' not in request.json.keys():
@@ -75,25 +96,23 @@ def notify():
         return make_response({}, 400)
 
     matricola = request.json['matricola']
-    print(matricola)
+    log.info("notify matricola: %s", matricola)
 
     r = bacheca(matricola)
     if 'devices' not in r:
-        print("matricola errata o inesistente")
+        log.warning("matricola errata o inesistente: %s", matricola)
         return make_response({'errore': 'matricola errata o inesistente'}, 400)
 
     lista_devices = r['devices']
-    #print(lista_devices.keys())
     if not lista_devices:
-        print("nessun device associato alla matricola")
+        log.warning("nessun device associato alla matricola: %s", matricola)
         return make_response({'errore': 'nessun device associato alla matricola'}, 400)
     device_name = list(lista_devices)[0]
-    print(device_name)
+    log.info("notify device: %s", device_name)
 
     device_data = device(device_name)
     if not device_data or 'fcmToken' not in device_data:
-        print(device_data)
-        print("ID ERRATO")
+        log.warning("id device errato o senza fcmToken: %s", _redact(device_data))
         return make_response({'errore': 'id device errato o non esistente'}, 400)
 
     registration_token = device_data['fcmToken']
@@ -137,20 +156,17 @@ def notify():
             ),
         ),
     )
-    print(message)
+    log.debug("sending FCM to device %s (room=%s)", device_name, 'NomeStanzaTest')
 
     try:
         response = messaging.send(message)
         # Response is a message ID string.
-        print('Successfully sent message:', response)
+        log.info("Successfully sent message: %s", response)
     except ValueError as e:
-        print("MESSAGGIO NON VALIDO")
-        print(e)
+        log.warning("MESSAGGIO NON VALIDO: %s", e)
         return make_response({'result': 'FAILURE', 'errore': 'messaggio non valido'}, 400)
     except FirebaseError as e:
-        print("ERRORE INVIO")
-        print(e.code)
-        print(e)
+        log.error("ERRORE INVIO [%s]: %s", e.code, e)
         return make_response({'result': 'FAILURE'}, 502)
 
     return {'result': 'SUCCESS'}
@@ -170,7 +186,7 @@ def new_device():
     ref = db.reference(path)
     ref.update(dati)
 
-    print("Data successfully written to Firebase!")
+    log.info("Data successfully written to Firebase: %s", path)
     return make_response({}, 200)
 
 
@@ -187,5 +203,5 @@ def new_bacheca():
     ref = db.reference(path)
     ref.update(dati)
 
-    print("Data successfully written to Firebase!")
+    log.info("Data successfully written to Firebase: %s", path)
     return make_response({}, 200)
