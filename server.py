@@ -119,36 +119,24 @@ def notify():
 
     message = messaging.Message(
         token=registration_token,
-        notification=messaging.Notification(
-            title='Chiamata in arrivo',
-            body='Tocca per rispondere alla videochiamata',
-        ),
         data={
             'url': request.json['http'],
             'room': 'NomeStanzaTest',
             'jwt': request.json['jwt'],
             'caller_name': 'Dr. Mario Rossi',
-            'click_action': 'FLUTTER_NOTIFICATION_CLICK',
         },
         android=messaging.AndroidConfig(
             priority='high',
-            notification=messaging.AndroidNotification(
-                channel_id='call_channel_v3',
-                click_action='FLUTTER_NOTIFICATION_CLICK',
-            ),
         ),
         apns=messaging.APNSConfig(
             headers={
                 'apns-priority': '10',
                 'apns-topic': 'com.latecnomedica.st4videocall',
+                'apns-push-type': 'alert',
             },
             payload=messaging.APNSPayload(
                 aps=messaging.Aps(
-                    alert=messaging.ApsAlert(
-                        title='Chiamata in arrivo',
-                        body='Tocca per rispondere alla video chiamata',
-                    ),
-                    sound='default',
+                    sound='ringtone.aiff',
                     content_available=True,
                     mutable_content=True,
                     category='INCOMING_CALL_CATEGORY',
@@ -157,6 +145,15 @@ def notify():
         ),
     )
     log.debug("sending FCM to device %s (room=%s)", device_name, 'NomeStanzaTest')
+    # JSON effettivamente serializzato e inviato a FCM (stesso encoder di messaging.send)
+    log.debug(
+        "FCM outgoing JSON: %s",
+        json.dumps(
+            _redact(messaging._MessagingService.encode_message(message)),
+            ensure_ascii=False,
+            indent=2,
+        ),
+    )
 
     try:
         response = messaging.send(message)
